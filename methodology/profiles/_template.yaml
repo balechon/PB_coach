@@ -1,0 +1,30 @@
+# Plantilla de perfil de metodología.
+# Copia este archivo a `<autor>.yaml` y rellena con las reglas reales de la
+# fuente (libro, paper, apuntes). Ver methodology/README.md para la
+# convención de IDs de regla.
+#
+# Este archivo es solo un esqueleto orientativo: el modelo tipado definitivo
+# vivirá en src/pb_coach/domain/methodology.py y puede exigir/permitir más
+# campos de los que aquí se muestran.
+
+autor: "NOMBRE_AUTOR"           # ej. "Lydiard"
+fuente: ""                       # referencia bibliográfica de dónde sale esto
+version: "0.1.0"
+
+deportes_soportados:
+  - ""                            # ej. "running", "ciclismo"
+
+reglas:
+  # Cada regla debe tener un ID único (ver convención en README.md),
+  # una descripción en lenguaje natural y los parámetros que el motor
+  # determinista necesita para aplicarla.
+  - id: "AUTOR-CATEGORIA-001"
+    categoria: ""                 # CARGA | PROGRESION | DESCANSO | SECUENCIA | INTENSIDAD
+    descripcion: ""                # texto citable, en lenguaje natural
+    parametros: {}                 # valores/umbrales que el engine consume
+
+restricciones_globales:
+  # Reglas que aplican al plan completo, no a un mesociclo/sesión individual.
+  # ej. "un solo deporte por mesociclo" si este autor lo exige explícitamente.
+  - id: "AUTOR-SECUENCIA-001"
+    descripcion: ""
