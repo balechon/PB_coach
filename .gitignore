@@ -23,3 +23,7 @@ htmlcov/
 .idea/
 .DS_Store
 Thumbs.db
+
+# Personal learning notes (not part of the project deliverable)
+LEARNING.md
+*example.*
