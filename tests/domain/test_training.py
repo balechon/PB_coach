@@ -178,6 +178,27 @@ def test_sesion_realizada_rechaza_carga_epoc_negativa():
         )
 
 
+def test_sesion_realizada_puede_tener_clase_sin_tipo():
+    sesion = SesionRealizada(
+        fecha=date(2026, 10, 13),
+        duracion=timedelta(minutes=40),
+        distancia_km=7,
+        clase_sesion=ClaseSesion.ESPECIFICO,
+    )
+    assert sesion.tipo_sesion is None
+
+
+def test_sesion_realizada_rechaza_tipo_incoherente_con_clase():
+    with pytest.raises(ValidationError):
+        SesionRealizada(
+            fecha=date(2026, 10, 13),
+            duracion=timedelta(minutes=40),
+            distancia_km=7,
+            clase_sesion=ClaseSesion.FONDO,
+            tipo_sesion=TipoSesion.SERIES,
+        )
+
+
 def test_sesion_realizada_rechaza_tipo_sin_clase():
     with pytest.raises(ValidationError, match="requiere clase_sesion"):
         SesionRealizada(

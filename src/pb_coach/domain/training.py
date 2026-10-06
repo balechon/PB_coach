@@ -146,7 +146,9 @@ class SesionRealizada(BaseModel):
 
     clase_sesion/tipo_sesion son opcionales: Garmin no sabe si un rodaje fue
     Fondo o Recuperación. Esa clasificación la hace engine/, no este modelo.
-    El descanso no se registra como actividad: es la ausencia de una.
+    Puede haber clase sin tipo (p. ej. clasificada por zona de FC: se sabe
+    que fue Específico, no si fue Tempo o Series). El descanso no se
+    registra como actividad: es la ausencia de una.
     """
 
     fecha: date
@@ -179,7 +181,8 @@ class SesionRealizada(BaseModel):
                 "Una sesión realizada no puede ser Descanso: el descanso es la ausencia de actividad"
             )
         if self.clase_sesion is not None:
-            _validar_tipo_para_clase(self.clase_sesion, self.tipo_sesion)
+            if self.tipo_sesion is not None:
+                _validar_tipo_para_clase(self.clase_sesion, self.tipo_sesion)
         elif self.tipo_sesion is not None:
             raise ValueError("tipo_sesion requiere clase_sesion")
         return self

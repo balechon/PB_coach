@@ -255,3 +255,20 @@ progresando con el mismo límite (40 → 44 → descarga 30 → 48 es válido;
 anterior y seguir subiendo de forma progresiva). Comparar contra la
 descarga marcaría como violación cada vuelta normal y, a la vez, abriría la
 puerta a saltos grandes justo después de descargar.
+
+## 2026-10-06 — Cierre de semana: clasificación y prioridad de acciones
+
+**Decisión**: `deviation.evaluar_semana` clasifica las sesiones realizadas
+(heredando clase y tipo de la sesión planificada del mismo día, o, si no
+hay, solo la clase por zona de FC: Z2 → Fondo, Z3–Z5 → Específico; Z1 queda
+sin clasificar por ambigua), mide adherencia de volumen y de sesiones y RPE
+medio, y evalúa las `reglas_ajuste`. Si se activan varias, gana la acción
+más conservadora: reducir_carga > adelantar_descarga > repetir_microciclo >
+extender_mesociclo > mantener > progresar; se informan todas las activadas.
+Si ninguna se activa, no hay acción y se sigue el plan. Una regla cuya
+métrica no está disponible (p. ej. un test que aún no se hizo) queda como no
+evaluable. Las métricas de progreso entran como `metricas_externas`.
+
+**Por qué**: ante señales de fatiga, proteger al atleta va antes que
+progresar. Deducir el tipo de sesión (Tempo, Umbral o Series) solo por la
+zona sería adivinar, así que `SesionRealizada` admite clase sin tipo.
