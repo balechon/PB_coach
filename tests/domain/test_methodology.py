@@ -1,8 +1,14 @@
 import pytest
 
 from pb_coach.domain.methodology import (
+    AccionAjuste,
     CategoriaRegla,
+    CondicionAjuste,
+    MetricaAjuste,
+    OperadorComparacion,
+    OrigenRegla,
     PerfilMetodologia,
+    ReglaAjuste,
     ReglaConteoMicrociclo,
     RegistroRegla,
     RegistroReglaSecuencial,
@@ -144,3 +150,48 @@ def test_restriccion_global_valida_con_parametros():
         parametros={"microciclos_carga_max": 3},
     )
     assert restriccion.parametros["microciclos_carga_max"] == 3
+
+
+# ---------- ReglaAjuste ----------
+
+def _regla_ajuste(**overrides) -> ReglaAjuste:
+    campos = dict(
+        id="LYDIARD-AJUSTE-001",
+        descripcion="Si se cumplió menos del 70% del volumen, repetir la semana.",
+        condicion=CondicionAjuste(
+            metrica=MetricaAjuste.ADHERENCIA_VOLUMEN_PCT,
+            operador=OperadorComparacion.MENOR,
+            valor=70,
+        ),
+        accion=AccionAjuste.REPETIR_MICROCICLO,
+        origen=OrigenRegla.PROPIO,
+    )
+    campos.update(overrides)
+    return ReglaAjuste(**campos)
+
+
+def test_regla_ajuste_valida():
+    regla = _regla_ajuste(parametros={"cambio_carga_pct": 5})
+    assert regla.accion == AccionAjuste.REPETIR_MICROCICLO
+    assert regla.parametros["cambio_carga_pct"] == 5
+
+
+def test_regla_ajuste_rechaza_accion_fuera_de_la_lista():
+    with pytest.raises(ValueError):
+        _regla_ajuste(accion="inventar_semana")
+
+
+def test_regla_ajuste_rechaza_metrica_que_el_motor_no_mide():
+    with pytest.raises(ValueError):
+        CondicionAjuste(metrica="horas_de_sueno", operador="<", valor=7)
+
+
+def test_regla_ajuste_exige_origen():
+    campos = _regla_ajuste().model_dump(exclude={"origen"})
+    with pytest.raises(ValueError):
+        ReglaAjuste(**campos)
+
+
+def test_perfil_rechaza_id_duplicado_en_reglas_ajuste():
+    with pytest.raises(ValueError, match="duplicados"):
+        _perfil_base(reglas_ajuste=[_regla_ajuste(id="LYDIARD-PROGRESION-001")])

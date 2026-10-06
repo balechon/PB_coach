@@ -87,6 +87,65 @@ class ReglaConteoMicrociclo(BaseModel):
         return self
 
 
+class MetricaAjuste(str, Enum):
+    """Métricas que engine/ sabe calcular al cerrar una semana o un bloque.
+    Lista cerrada: una regla no puede depender de algo que el motor no mide."""
+
+    ADHERENCIA_VOLUMEN_PCT = "adherencia_volumen_pct"
+    ADHERENCIA_SESIONES_PCT = "adherencia_sesiones_pct"
+    RPE_MEDIO = "rpe_medio"
+    MEJORA_TEST_PCT = "mejora_test_pct"
+    MEJORA_INDICADOR_PASIVO_PCT = "mejora_indicador_pasivo_pct"
+
+
+class OperadorComparacion(str, Enum):
+    MENOR = "<"
+    MENOR_O_IGUAL = "<="
+    MAYOR = ">"
+    MAYOR_O_IGUAL = ">="
+
+
+class CondicionAjuste(BaseModel):
+    metrica: MetricaAjuste
+    operador: OperadorComparacion
+    valor: float
+
+
+class AccionAjuste(str, Enum):
+    """Reacciones posibles a lo que pasó. Lista cerrada: el motor decide cuál
+    aplica y el LLM solo la concreta; nunca inventa una fuera de aquí."""
+
+    PROGRESAR = "progresar"
+    MANTENER = "mantener"
+    REDUCIR_CARGA = "reducir_carga"
+    REPETIR_MICROCICLO = "repetir_microciclo"
+    ADELANTAR_DESCARGA = "adelantar_descarga"
+    EXTENDER_MESOCICLO = "extender_mesociclo"
+
+
+class OrigenRegla(str, Enum):
+    """autor: tal cual la fuente. propio: interpretación numérica propia de
+    una indicación cualitativa del autor."""
+
+    AUTOR = "autor"
+    PROPIO = "propio"
+
+
+class ReglaAjuste(BaseModel):
+    """Cómo reaccionar a lo ocurrido: condición sobre una métrica → acción.
+
+    Los umbrales y los cambios de carga se expresan en porcentajes relativos
+    a la línea base del atleta (ej. parametros: {cambio_carga_pct: 5}).
+    """
+
+    id: str
+    descripcion: str
+    condicion: CondicionAjuste
+    accion: AccionAjuste
+    parametros: dict[str, float | int | str] = Field(default_factory=dict)
+    origen: OrigenRegla
+
+
 class PerfilMetodologia(BaseModel):
     """Un perfil de metodología completo — la traducción íntegra de un YAML
     de autor a objetos tipados. Solo un perfil está activo por Plan.
@@ -101,6 +160,7 @@ class PerfilMetodologia(BaseModel):
     restricciones_globales: list[RestriccionGlobal] = Field(default_factory=list)
     reglas_secuenciales: list[RegistroReglaSecuencial] = Field(default_factory=list)
     reglas_conteo_microciclo: list[ReglaConteoMicrociclo] = Field(default_factory=list)
+    reglas_ajuste: list[ReglaAjuste] = Field(default_factory=list)
 
     @model_validator(mode="after")
     def validar_ids_unicos(self) -> "PerfilMetodologia":
@@ -109,6 +169,7 @@ class PerfilMetodologia(BaseModel):
             + [r.id for r in self.restricciones_globales]
             + [r.id for r in self.reglas_secuenciales]
             + [r.id for r in self.reglas_conteo_microciclo]
+            + [r.id for r in self.reglas_ajuste]
         )
         vistos: set[str] = set()
         duplicados: set[str] = set()
@@ -120,72 +181,3 @@ class PerfilMetodologia(BaseModel):
         if duplicados:
             raise ValueError(f"IDs de regla duplicados en el perfil: {sorted(duplicados)}")
         return self
-
-
-if __name__=="__main__":
-    from pb_coach.domain.training import ClaseSesion, ObjetivoMesociclo
-
-    # 1-2 reglas en `reglas` — usa CategoriaRegla y, si quieres,
-    # objetivo_mesociclo/clase_sesion como condición de aplicabilidad.
-    regla_progresion = RegistroRegla(
-        id="LYDIARD-PROGRESION-001",
-        categoria=CategoriaRegla.PROGRESION,
-        descripcion=" En mesociclos de base aeróbica, el volumen semanal no debe subir más del 10% respecto a la semana anterior.",
-        objetivo_mesociclo=ObjetivoMesociclo.BASE_AEROBICA,   # opcional, o quítalo
-        parametros={"incremento_maximo_pct": 10},
-    )
-
-    # Regla 1 de tu tabla: después de Fondo, solo Recuperación o Descanso.
-    regla_secuencial_fondo = RegistroReglaSecuencial(
-        id="LYDIARD-SECUENCIA-002",
-        descripcion="después de Fondo, solo Recuperación o Descanso",
-        clase_sesion_previa=ClaseSesion.FONDO,
-        clases_permitidas_despues=[ClaseSesion.RECUPERACION, ClaseSesion.DESCANSO],
-    )
-
-    # Regla 2 de tu tabla: no dos Específico seguidos.
-    regla_secuencial_especifico = RegistroReglaSecuencial(
-        id="LYDIARD-SECUENCIA-003",
-        descripcion="no dos Específico seguidos",
-        clase_sesion_previa=ClaseSesion.ESPECIFICO,
-        clases_permitidas_despues=[    ClaseSesion.FONDO,
-    ClaseSesion.RECUPERACION,
-    ClaseSesion.DESCANSO,],  # todas MENOS Específico
-    )
-
-    # Regla 4 de tu tabla: mínimo 1 Descanso por microciclo.
-    regla_conteo_descanso = ReglaConteoMicrociclo(
-        id="LYDIARD-CONTEO-001",
-        descripcion="mínimo 1 Descanso por microciclo",
-        clase_sesion=ClaseSesion.DESCANSO,
-        minimo=1,
-    )
-
-    perfil = PerfilMetodologia(
-        autor="luis lydiard",
-        fuente="https://www.runnersworld.com/training/a20803112/lydiard-training-method/",
-        version="0.1.0",
-        deportes_soportados=["running", "trail running"],
-        reglas=[regla_progresion],
-        reglas_secuenciales=[regla_secuencial_fondo, regla_secuencial_especifico],
-        reglas_conteo_microciclo=[regla_conteo_descanso],
-    )
-    print("Perfil construido OK:", perfil.autor, "-", len(perfil.reglas_secuenciales), "reglas secuenciales")
-
-    # Caso que DEBE fallar: dos reglas con el mismo id.
-    try:
-        PerfilMetodologia(
-            autor="luis lydiard",
-            fuente="https://www.runnersworld.com/training/a20803112/lydiard-training-method/",
-            version="0.1.0",
-            deportes_soportados=["running"],
-            reglas=[
-                RegistroRegla(id="DUP-001", categoria=CategoriaRegla.CARGA, descripcion=" la regla "),
-            ],
-            reglas_conteo_microciclo=[
-                ReglaConteoMicrociclo(id="DUP-001", descripcion=" en mesociclos", clase_sesion=ClaseSesion.DESCANSO, minimo=1),
-            ],
-        )
-        print("ERROR: no se rechazó el id duplicado")
-    except Exception as e:
-        print("Rechazado correctamente (id duplicado)")

@@ -41,6 +41,7 @@ def test_carga_ejemplo_didactico():
     assert len(perfil.restricciones_globales) == 2
     assert len(perfil.reglas_secuenciales) == 2
     assert len(perfil.reglas_conteo_microciclo) == 2
+    assert len(perfil.reglas_ajuste) == 2
 
 
 def test_acepta_ruta_como_str(tmp_path):

@@ -107,3 +107,28 @@ reglas_conteo_microciclo:
     descripcion: "Como máximo puede haber 3 entrenamientos de tipo Específico por microciclo."
     clase_sesion: "Específico"
     maximo: 3
+
+# ---------------------------------------------------------------------
+# reglas_ajuste: ReglaAjuste — condición sobre una métrica de la semana o
+# del bloque → acción. Umbrales sintéticos (origen "propio"), no de autor.
+# ---------------------------------------------------------------------
+reglas_ajuste:
+  - id: "EJEMPLO-AJUSTE-001"
+    descripcion: "Si se cumplió menos del 70% del volumen planeado, repetir la semana en vez de progresar."
+    condicion:
+      metrica: "adherencia_volumen_pct"
+      operador: "<"
+      valor: 70
+    accion: "repetir_microciclo"
+    origen: "propio"
+
+  - id: "EJEMPLO-AJUSTE-002"
+    descripcion: "Si el test de fin de mesociclo mejora, aumentar la carga del siguiente bloque un 5%."
+    condicion:
+      metrica: "mejora_test_pct"
+      operador: ">"
+      valor: 0
+    accion: "progresar"
+    parametros:
+      cambio_carga_pct: 5
+    origen: "propio"

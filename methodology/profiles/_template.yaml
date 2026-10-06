@@ -75,3 +75,25 @@ reglas_conteo_microciclo:
     descripcion: "Mínimo debe haber un día de entrenamiento Descanso por microciclo."
     clase_sesion: "Descanso"
     minimo: 1
+
+# ---------------------------------------------------------------------
+# reglas_ajuste: ReglaAjuste — cómo reaccionar a lo que pasó al cerrar una
+# semana o un bloque: condición sobre una métrica → acción.
+# metrica: adherencia_volumen_pct | adherencia_sesiones_pct | rpe_medio |
+#          mejora_test_pct | mejora_indicador_pasivo_pct
+# operador: "<" | "<=" | ">" | ">="
+# accion: progresar | mantener | reducir_carga | repetir_microciclo |
+#         adelantar_descarga | extender_mesociclo
+# origen: autor (tal cual la fuente) | propio (tu interpretación numérica
+#         de una indicación cualitativa del autor)
+# Los cambios de carga van en porcentaje relativo a tu línea base.
+# ---------------------------------------------------------------------
+reglas_ajuste:
+  - id: "LYDIARD-AJUSTE-001"
+    descripcion: "Si se cumplió menos del 70% del volumen planeado, repetir la semana en vez de progresar."
+    condicion:
+      metrica: "adherencia_volumen_pct"
+      operador: "<"
+      valor: 70
+    accion: "repetir_microciclo"
+    origen: "propio"

@@ -63,16 +63,38 @@ docs/           Visión, decisiones y diagramas (fuente HTML en docs/*/)
 
 ## Estado actual
 
-- Hecho: modelos de dominio (`domain/training.py`, `domain/methodology.py`),
-  loader de perfiles (`engine/loader.py`) y un perfil didáctico
-  (`methodology/profiles/ejemplo_didactico.yaml`), todo con tests.
-- Siguiente: adaptar `domain/` a la visión del 2026-10-06 (modos, tres
-  niveles, sesión planificada vs. realizada, reglas de ajuste) y construir
-  el motor determinista.
+- Hecho: modelos de dominio alineados con la visión (modos construcción /
+  competición, tres niveles de detalle, sesión planificada vs. realizada,
+  reglas de ajuste), loader de perfiles, perfil didáctico, API con `/health`
+  y stack Docker (n8n + pb-coach + garmin-mcp), todo con tests.
+- Siguiente: motor determinista (`engine/calculator.py`, `validator.py`,
+  `deviation.py`) y persistencia SQLite.
 
 ## Setup
 
+Entorno y dependencias con [uv](https://docs.astral.sh/uv/) (Python 3.12,
+fijado en `.python-version`; versiones exactas en `uv.lock`):
+
 ```bash
-pip install -e ".[dev]"
-pytest
+uv sync            # crea .venv e instala dependencias + grupo dev
+uv run pytest      # tests
+uv add <paquete>   # nueva dependencia (actualiza pyproject.toml y uv.lock)
+```
+
+## Docker
+
+```bash
+docker compose up -d --build                    # pb-coach en 127.0.0.1:8000 (/health)
+docker compose run --rm --build test            # tests dentro del contenedor
+docker compose --profile garmin up -d --build   # + garmin-mcp
+```
+
+`garmin-mcp` necesita tus credenciales de Garmin en `secrets/` (ignorado por
+git) y un primer login interactivo para el código MFA:
+
+```bash
+mkdir -p secrets
+printf '%s' 'tu_email' > secrets/garmin_email.txt
+printf '%s' 'tu_password' > secrets/garmin_password.txt
+docker compose --profile garmin run --rm garmin-mcp
 ```
