@@ -293,3 +293,20 @@ qué acciones de ajuste se aplicaron) y el flujo estándar de un proyecto
 real (ORM + migraciones). Coste: un contenedor más (~50–100 MB) y tests de
 persistencia contra un Postgres levantado; el motor sigue siendo puro y sus
 tests no cambian.
+
+## 2026-10-06 — Diseño de la persistencia
+
+**Decisión**: tablas `plan` (un ciclo; uno solo activo), `plan_version`
+(cada versión completa como JSONB, inmutable, con el motivo del cambio),
+`sesion_realizada` (columnas normales, `garmin_activity_id` único para que
+el sync sea idempotente) y `ejecucion_agente` (resultado y tokens). El
+esquema lo gestiona Alembic con migraciones escritas a mano; pb-coach las
+aplica al arrancar. El repositorio no hace commit (lo decide quien llama,
+para que un ajuste semanal sea todo o nada) y vuelve a validar con Pydantic
+cada plan que lee. Los tests de persistencia corren contra Postgres real en
+un esquema temporal y verifican que la migración coincide con los modelos.
+
+**Por qué**: versiones inmutables dan el historial completo de qué cambió y
+por qué regla; validar al leer impide que un dato inconsistente en la base
+llegue al motor como válido; probar contra el Postgres real evita las
+diferencias de comportamiento que tendría una base de pruebas distinta.

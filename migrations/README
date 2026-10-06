@@ -1,0 +1,7 @@
+Migraciones de la base de pb-coach (Alembic).
+
+    alembic upgrade head          # aplica todas (el contenedor lo hace al arrancar)
+    alembic revision -m "..."     # nueva migración, escrita a mano en versions/
+    alembic check                 # falla si los modelos y la base no coinciden
+
+La conexión sale de DATABASE_URL.

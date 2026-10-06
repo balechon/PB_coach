@@ -56,7 +56,10 @@ src/pb_coach/
   engine/       Motor determinista: loader, calculator, validator, deviation
   agent/        Capa LLM: planner, evaluator, explainer
   mcp_client/   Cliente MCP de garmin-mcp (sync de actividades, publicar semana)
+  persistence/  Postgres: modelos SQLAlchemy y repositorio
+  api/          API HTTP mínima (FastAPI)
   integrations/n8n/  Contrato de los webhooks que n8n dispara
+migrations/     Migraciones de Alembic (se aplican al arrancar pb-coach)
 tests/          Tests, principalmente del motor determinista
 docs/           Visión, decisiones y diagramas (fuente HTML en docs/*/)
 ```
@@ -69,7 +72,9 @@ docs/           Visión, decisiones y diagramas (fuente HTML en docs/*/)
   y stack Docker (n8n + pb-coach + garmin-mcp), todo con tests.
 - Hecho también: motor determinista completo (`engine/calculator.py`,
   `validator.py`, `deviation.py`) y Postgres en el stack (n8n ya lo usa).
-- Siguiente: persistencia de pb-coach en Postgres (SQLAlchemy + Alembic).
+- Hecho también: persistencia en Postgres (`persistence/`, SQLAlchemy +
+  migraciones Alembic en `migrations/`).
+- Siguiente: cliente de garmin-mcp (sync y publicar) y el agente LLM.
 
 ## Setup
 
@@ -78,7 +83,7 @@ fijado en `.python-version`; versiones exactas en `uv.lock`):
 
 ```bash
 uv sync            # crea .venv e instala dependencias + grupo dev
-uv run pytest      # tests
+uv run pytest      # tests (los de Postgres se saltan sin TEST_DATABASE_URL)
 uv add <paquete>   # nueva dependencia (actualiza pyproject.toml y uv.lock)
 ```
 
@@ -86,7 +91,7 @@ uv add <paquete>   # nueva dependencia (actualiza pyproject.toml y uv.lock)
 
 ```bash
 docker compose up -d --build                    # pb-coach en 127.0.0.1:8000 (/health)
-docker compose run --rm --build test            # tests dentro del contenedor
+docker compose run --rm --build test            # todos los tests, incluidos los de Postgres
 docker compose --profile garmin up -d --build   # + garmin-mcp
 ```
 

@@ -80,11 +80,18 @@ services:
         condition: service_healthy
     restart: unless-stopped
 
+  # Tests (incluidos los de persistencia, en un esquema temporal de la base
+  # pb_coach que se borra al terminar).
   test:
     build:
       context: .
       target: test
     profiles: ["test"]
+    environment:
+      TEST_DATABASE_URL: postgresql+psycopg://pb_coach:${PB_COACH_DB_PASSWORD}@postgres:5432/pb_coach
+    depends_on:
+      postgres:
+        condition: service_healthy
 
   # Servidor MCP de Garmin (Taxuspt/garmin_mcp), fijado a un commit.
   # Primer login (pide el código MFA por consola):

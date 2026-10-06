@@ -19,9 +19,10 @@ RUN --mount=type=cache,target=/root/.cache/uv \
     --mount=type=bind,source=pyproject.toml,target=pyproject.toml \
     uv sync --locked --no-install-project --no-dev
 
-COPY pyproject.toml uv.lock README.md ./
+COPY pyproject.toml uv.lock README.md alembic.ini ./
 COPY src ./src
 COPY methodology ./methodology
+COPY migrations ./migrations
 
 RUN --mount=type=cache,target=/root/.cache/uv \
     uv sync --locked --no-dev
@@ -49,4 +50,5 @@ EXPOSE 8000
 HEALTHCHECK --interval=30s --timeout=3s --retries=3 \
     CMD python -c "import urllib.request; urllib.request.urlopen('http://127.0.0.1:8000/health')"
 
-CMD ["uvicorn", "pb_coach.api.app:app", "--host", "0.0.0.0", "--port", "8000"]
+# Aplica las migraciones pendientes antes de servir la API.
+CMD ["sh", "-c", "alembic upgrade head && exec uvicorn pb_coach.api.app:app --host 0.0.0.0 --port 8000"]
