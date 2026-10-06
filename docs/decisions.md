@@ -225,3 +225,20 @@ en `.python-version`. El `Dockerfile` copia `uv` desde su imagen oficial
 **Por qué**: un solo lockfile reproducible tanto en local como en el
 contenedor, instalación rápida y cacheable por capas, y menos piezas que
 mantener que pip + venv + requirements.
+
+## 2026-10-06 — Carga: EPOC de Garmin, sRPE como respaldo; objetivos en tiempo
+
+**Decisión**: la carga de una sesión es la carga de entrenamiento de Garmin
+(basada en EPOC, campo `carga_epoc` de `SesionRealizada`); como respaldo,
+sRPE = RPE x minutos. Las dos se calculan como series paralelas y **nunca se
+suman entre sí**: al comparar dos periodos, `comparar_carga` usa EPOC si
+todas las sesiones de ambos periodos lo tienen, si no sRPE con la misma
+condición, y si ninguna está completa devuelve None en vez de un número
+parcial. Además, `ObjetivosMicrociclo` acepta el volumen semanal en tiempo
+(`duracion`), en km o en ambos.
+
+**Por qué**: EPOC no requiere esfuerzo del atleta y lo calcula el reloj; sRPE
+es el estándar de la literatura cuando falta. Están en escalas distintas
+(~120 vs ~420 para la misma sesión), así que mezclarlas falsearía cualquier
+porcentaje de progresión. Los objetivos en tiempo reflejan cómo se planifica
+en trail y en Uphill Athlete, donde los km con desnivel no son comparables.

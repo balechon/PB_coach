@@ -164,6 +164,10 @@ class SesionRealizada(BaseModel):
     rpe: Optional[int] = Field(default=None, ge=1, le=10)
     sensaciones: Optional[str] = None
 
+    # Carga de entrenamiento de Garmin (basada en EPOC). Fuente principal de
+    # carga; si falta, engine/ usa sRPE (rpe x minutos) como respaldo.
+    carga_epoc: Optional[float] = Field(default=None, ge=0)
+
     garmin_activity_id: Optional[int] = None
 
     @model_validator(mode="after")
@@ -190,14 +194,21 @@ class TipoMicrociclo(str, Enum):
 
 class ObjetivosMicrociclo(BaseModel):
     """Lo que se espera de una semana (nivel 2), antes de bajarla a
-    sesiones concretas."""
+    sesiones concretas. El volumen se puede fijar en tiempo, en distancia o
+    en ambos (en trail, y en metodologías como Uphill Athlete, se planifica
+    en horas)."""
 
-    volumen_km: float = Field(ge=0)
+    duracion: Optional[timedelta] = None
+    volumen_km: Optional[float] = Field(default=None, ge=0)
     sesiones_por_clase: dict[ClaseSesion, int] = Field(default_factory=dict)
     desnivel_positivo_m: Optional[float] = Field(default=None, ge=0)
 
     @model_validator(mode="after")
     def validar_conteos(self) -> "ObjetivosMicrociclo":
+        if self.duracion is None and self.volumen_km is None:
+            raise ValueError("Los objetivos de la semana necesitan duracion, volumen_km o ambos")
+        if self.duracion is not None and self.duracion < timedelta(0):
+            raise ValueError("duracion no puede ser negativa")
         negativos = {c: n for c, n in self.sesiones_por_clase.items() if n < 0}
         if negativos:
             raise ValueError(f"sesiones_por_clase no puede tener conteos negativos: {negativos}")

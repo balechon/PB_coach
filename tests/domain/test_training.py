@@ -168,6 +168,16 @@ def test_sesion_realizada_rechaza_rpe_fuera_de_rango():
         )
 
 
+def test_sesion_realizada_rechaza_carga_epoc_negativa():
+    with pytest.raises(ValidationError):
+        SesionRealizada(
+            fecha=date(2026, 10, 13),
+            duracion=timedelta(minutes=40),
+            distancia_km=7,
+            carga_epoc=-1,
+        )
+
+
 def test_sesion_realizada_rechaza_tipo_sin_clase():
     with pytest.raises(ValidationError, match="requiere clase_sesion"):
         SesionRealizada(
@@ -183,6 +193,17 @@ def test_sesion_realizada_rechaza_tipo_sin_clase():
 def test_objetivos_rechaza_conteo_negativo():
     with pytest.raises(ValidationError, match="negativos"):
         ObjetivosMicrociclo(volumen_km=30, sesiones_por_clase={ClaseSesion.ESPECIFICO: -1})
+
+
+def test_objetivos_por_tiempo_sin_km_es_valido():
+    # Uphill Athlete planifica la semana en horas.
+    objetivos = ObjetivosMicrociclo(duracion=timedelta(hours=6), desnivel_positivo_m=1500)
+    assert objetivos.volumen_km is None
+
+
+def test_objetivos_necesitan_duracion_o_km():
+    with pytest.raises(ValidationError, match="duracion, volumen_km o ambos"):
+        ObjetivosMicrociclo(sesiones_por_clase={ClaseSesion.FONDO: 3})
 
 
 def test_objetivos_rechaza_volumen_negativo():
