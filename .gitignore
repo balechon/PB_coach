@@ -24,6 +24,30 @@ htmlcov/
 .DS_Store
 Thumbs.db
 
-# Personal learning notes (not part of the project deliverable)
+# Personal learning notes / scratch files (not part of the project deliverable)
 LEARNING.md
-*example.*
+pydantic_example.py
+
+# Local data: SQLite database (training history, plans)
+*.db
+*.sqlite
+*.sqlite3
+data/
+
+# Garmin auth tokens (garmin-mcp / garth) — full account access
+.garminconnect/
+.garth/
+
+# Secrets and logs
+*.pem
+*.key
+*.log
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# HyperFrames diagram projects: build output and generated agent guides
+docs/*/snapshots/
+docs/*/node_modules/
+docs/*/CLAUDE.md
+docs/*/AGENTS.md

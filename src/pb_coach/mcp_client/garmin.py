@@ -1,5 +1,8 @@
-# Cliente MCP que consume un servidor MCP externo de Strava para leer el
-# historial real de entrenamiento.
+# Cliente MCP que consume el servidor garmin-mcp (Taxuspt/garmin_mcp), que
+# corre como contenedor propio en la red interna del docker-compose.
 #
-# Placeholder — sin implementar todavía. El agente actúa como cliente MCP,
-# no expone un servidor propio.
+# Dos usos, ambos deterministas (sin LLM), con una lista blanca de tools:
+#   - sync: actividades nuevas -> SesionRealizada -> SQLite
+#   - publicar: sesiones de la próxima semana -> entrenamientos en el reloj
+#
+# Placeholder — sin implementar todavía.

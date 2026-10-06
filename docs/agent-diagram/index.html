@@ -1,0 +1,266 @@
+<!doctype html>
+<html lang="es" data-resolution="landscape">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=1920, height=1080" />
+    <title>PB_coach — Agente</title>
+    <script src="https://cdn.jsdelivr.net/npm/gsap@3.14.2/dist/gsap.min.js"></script>
+    <style>
+      @font-face { font-family: 'CodeMono'; src: local('Cascadia Mono'), local('Consolas'); }
+      * { margin: 0; padding: 0; box-sizing: border-box; }
+      html, body { width: 1920px; height: 1080px; overflow: hidden; background: #0d1117; }
+      #root {
+        position: relative; width: 100%; height: 100%;
+        font-family: ui-sans-serif, system-ui, sans-serif; color: #e6edf3;
+        background: radial-gradient(circle at 1px 1px, #1f2630 1px, transparent 0) 0 0 / 28px 28px, #0d1117;
+      }
+      .mono { font-family: 'CodeMono', monospace; }
+      .dim { color: #7d8590; }
+
+      #header { position: absolute; left: 60px; top: 34px; width: 1800px; }
+      #header h1 { font-size: 42px; font-weight: 700; letter-spacing: -0.02em; }
+      #header h1 span { color: #7d8590; font-weight: 400; }
+      #header p { margin-top: 6px; font-size: 19px; color: #9da7b3; }
+      #header p b { color: #fbbf24; font-weight: 600; }
+
+      .box {
+        position: absolute; border-radius: 14px; background: #161b22;
+        border: 2px solid var(--c); padding: 16px 20px;
+      }
+      .tag { font-size: 13px; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase; color: var(--c); }
+      .box h2 { font-size: 24px; font-weight: 700; margin-top: 4px; }
+      .box h2 .mono { font-size: 18px; font-weight: 400; color: #9da7b3; margin-left: 8px; }
+      .sub { font-size: 15px; color: #9da7b3; margin-top: 6px; line-height: 1.4; }
+
+      .kv { margin-top: 12px; display: flex; flex-direction: column; gap: 6px; }
+      .kv div { font-size: 15px; display: flex; gap: 10px; }
+      .kv .k { color: #7d8590; width: 150px; flex: none; }
+      .kv .v { color: #e6edf3; }
+      .kv .mono { font-size: 14.5px; }
+
+      .code {
+        margin-top: 12px; padding: 12px 14px; border-radius: 10px; background: #0d1117;
+        border: 1px solid #30363d; font-family: 'CodeMono', monospace; font-size: 15px; line-height: 1.6;
+      }
+      .code .f { color: #79c0ff; }
+      .code .t { color: #ffa657; }
+      .code .s { color: #a5d6ff; }
+      .code .c { color: #7d8590; }
+
+      .rules { margin-top: 12px; padding-top: 10px; border-top: 1px solid #30363d; }
+      .rules h4 { font-size: 13px; letter-spacing: 0.08em; text-transform: uppercase; color: #7d8590; font-weight: 700; }
+      .rules div { font-size: 14.5px; color: #c9d1d9; margin-top: 5px; line-height: 1.35; }
+
+      #tools {
+        position: absolute; left: 470px; top: 660px; width: 1390px; height: 385px;
+        border: 2px dashed #30363d; border-radius: 18px; background: rgba(22, 27, 34, 0.5);
+      }
+      #tools .label {
+        position: absolute; left: 440px; top: -14px; padding: 0 10px; background: #0d1117;
+        font-size: 16px; font-weight: 700; color: #c9d1d9;
+      }
+      #tools .label span { color: #7d8590; font-weight: 400; }
+      .tool {
+        position: absolute; top: 700px; width: 257px; height: 325px; border-radius: 12px;
+        background: #161b22; border: 2px solid var(--c); padding: 14px 16px;
+      }
+      .tool .name { font-family: 'CodeMono', monospace; font-size: 17px; font-weight: 700; color: var(--c); }
+      .tool .what { font-size: 14.5px; color: #c9d1d9; margin-top: 8px; line-height: 1.35; height: 60px; }
+      .tool .io { margin-top: 10px; font-size: 13.5px; line-height: 1.45; }
+      .tool .io .dim { display: block; font-size: 12px; letter-spacing: 0.06em; text-transform: uppercase; }
+      .tool .io .mono { font-size: 13.5px; color: #e6edf3; }
+      .tool .impl {
+        position: absolute; left: 16px; right: 16px; bottom: 14px; padding-top: 9px;
+        border-top: 1px solid #30363d; font-size: 13px; color: #9da7b3;
+      }
+      .tool .impl .mono { color: #e6edf3; font-size: 13.5px; }
+      .chip {
+        display: inline-block; margin-top: 8px; padding: 3px 9px; border-radius: 999px; font-size: 12px; font-weight: 600;
+        background: color-mix(in srgb, var(--c) 18%, transparent); color: var(--c);
+      }
+
+      .lbl { position: absolute; font-size: 14px; color: #c9d1d9; line-height: 1.3; }
+      .lbl b { color: #e6edf3; }
+      .step {
+        position: absolute; width: 30px; height: 30px; border-radius: 50%;
+        background: #fbbf24; color: #0d1117; font-size: 16px; font-weight: 800;
+        display: flex; align-items: center; justify-content: center;
+      }
+    </style>
+  </head>
+  <body>
+    <div id="root" data-composition-id="main" data-start="0" data-duration="1" data-width="1920" data-height="1080">
+
+      <div id="header">
+        <h1>PB_coach <span>· el agente por dentro</span></h1>
+        <p>Diseño propuesto. Garmin entra y sale <b>solo por código determinista</b> (MCP); el LLM trabaja con datos ya validados y agregados.</p>
+      </div>
+
+      <svg width="1920" height="1080" viewBox="0 0 1920 1080" style="position:absolute;inset:0">
+        <defs>
+          <marker id="ah" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#8b949e" />
+          </marker>
+          <marker id="ahv" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#a78bfa" />
+          </marker>
+          <marker id="aht" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#2dd4bf" />
+          </marker>
+          <marker id="ahp" viewBox="0 0 10 10" refX="9" refY="5" markerWidth="7" markerHeight="7" orient="auto-start-reverse">
+            <path d="M0,0 L10,5 L0,10 z" fill="#f472b6" />
+          </marker>
+        </defs>
+        <g fill="none" stroke-width="2.5">
+          <!-- entrada -> agente -->
+          <path d="M400 300 H466" stroke="#8b949e" marker-end="url(#ah)" />
+          <!-- bucle de tools -->
+          <path d="M700 570 V696" stroke="#a78bfa" stroke-width="3" marker-end="url(#ahv)" />
+          <path d="M840 696 V574" stroke="#2dd4bf" stroke-width="3" marker-end="url(#aht)" />
+          <!-- agente -> salida -> guardia -->
+          <path d="M1030 300 H1106" stroke="#8b949e" marker-end="url(#ah)" />
+          <path d="M1485 410 V446" stroke="#8b949e" marker-end="url(#ah)" />
+          <path d="M1110 515 H1034" stroke="#f85149" stroke-dasharray="6 5" marker-end="url(#ah)" />
+          <!-- garmin-mcp -> sync (lee) ; publicar -> garmin-mcp (escribe) -->
+          <path d="M230 650 V624" stroke="#f472b6" marker-end="url(#ahp)" />
+          <path d="M230 840 V784" stroke="#f472b6" marker-end="url(#ahp)" />
+        </g>
+      </svg>
+
+      <!-- ===== entrada ===== -->
+      <div class="box" style="--c:#f0883e; left:60px; top:160px; width:340px; height:300px">
+        <div class="tag">Entrada · desde n8n</div>
+        <h2>Solicitud</h2>
+        <div class="code">
+          <div><span class="f">operacion</span>: <span class="s">"crear_ciclo"</span></div>
+          <div>  | <span class="s">"ajuste_semanal"</span></div>
+          <div><span class="f">modo</span>: <span class="s">"construccion"</span></div>
+          <div>  | <span class="s">"competicion"</span></div>
+          <div><span class="f">perfil</span>: <span class="s">"uphill_athlete"</span></div>
+          <div><span class="f">carrera</span>: <span class="t">Carrera</span> | <span class="t">None</span></div>
+        </div>
+      </div>
+
+      <!-- ===== garmin: sync / mcp / publicar ===== -->
+      <div class="box" style="--c:#56d4dd; left:60px; top:490px; width:340px; height:130px">
+        <div class="tag">Paso 0 · antes del agente · sin LLM</div>
+        <h2>sync</h2>
+        <div class="sub">Actividades nuevas → <span class="mono">SesionRealizada</span> (Pydantic) → SQLite.</div>
+      </div>
+      <div class="box" style="--c:#f472b6; left:60px; top:654px; width:340px; height:126px; border-style:dashed">
+        <div class="tag">Contenedor · red interna</div>
+        <h2>garmin-mcp</h2>
+        <div class="sub">Lista blanca de ~5 tools. Habla con Garmin Connect.</div>
+      </div>
+      <div class="box" style="--c:#56d4dd; left:60px; top:844px; width:340px; height:150px">
+        <div class="tag">Paso 5 · tras la guardia · sin LLM</div>
+        <h2>publicar</h2>
+        <div class="sub">Sesiones de la próxima semana → JSON de entrenamiento (desde código) → tu reloj.</div>
+      </div>
+      <div class="lbl" style="left:244px; top:627px; width:60px; font-size:12px; color:#f472b6">lee</div>
+      <div class="lbl" style="left:244px; top:802px; width:70px; font-size:12px; color:#f472b6">escribe</div>
+
+      <!-- ===== agente ===== -->
+      <div class="box" style="--c:#a78bfa; left:470px; top:160px; width:560px; height:410px">
+        <div class="tag">agent/ · bucle de tool use</div>
+        <h2>Claude Opus 5.5<span class="mono">claude-opus-5-5</span></h2>
+        <div class="kv">
+          <div><span class="k">SDK</span><span class="v"><span class="mono">anthropic</span> · Tool Runner, máx. N iteraciones</span></div>
+          <div><span class="k">thinking · effort</span><span class="v mono">adaptive · high</span></div>
+          <div><span class="k">tools</span><span class="v"><span class="mono">tool_choice: auto</span> · <span class="mono">strict: true</span></span></div>
+          <div><span class="k">formato de salida</span><span class="v"><span class="mono">output_config.format</span> → ResultadoAgente</span></div>
+          <div><span class="k">si el modelo rechaza</span><span class="v"><span class="mono">fallbacks: "default"</span></span></div>
+        </div>
+        <div class="rules">
+          <h4>System prompt · reglas duras</h4>
+          <div>· Solo cita IDs de regla devueltos por <span class="mono">obtener_perfil</span>.</div>
+          <div>· La acción de ajuste la decide <span class="mono">evaluar_semana</span>; el LLM la concreta.</div>
+          <div>· Nunca declara un plan válido sin <span class="mono">validar_plan</span>.</div>
+          <div>· Tras N intentos con violaciones → <span class="mono">sin_solucion</span>.</div>
+        </div>
+      </div>
+
+      <div class="lbl" style="left:560px; top:615px; width:130px; text-align:right; color:#a78bfa"><b style="color:#a78bfa">tool_use</b> · pide</div>
+      <div class="lbl" style="left:852px; top:615px; width:160px; color:#2dd4bf"><b style="color:#2dd4bf">tool_result</b> · responde</div>
+
+      <!-- ===== salida ===== -->
+      <div class="box" style="--c:#fbbf24; left:1110px; top:160px; width:750px; height:250px">
+        <div class="tag">Salida estructurada · Pydantic</div>
+        <h2>ResultadoAgente</h2>
+        <div class="code" style="line-height:1.5">
+          <div><span class="f">estado</span>: <span class="s">"plan_valido"</span> | <span class="s">"sin_solucion"</span></div>
+          <div><span class="f">plan</span>: <span class="t">Plan</span>  <span class="c"># versión n+1, en sus 3 niveles</span></div>
+          <div><span class="f">accion</span>: {<span class="f">tipo</span>: <span class="s">"progresar"</span>, <span class="f">regla_id</span>}  <span class="c"># reglas_ajuste</span></div>
+          <div><span class="f">justificaciones</span>: [ {<span class="f">decision</span>, <span class="f">regla_ids</span>} ]</div>
+          <div><span class="f">violaciones</span>: [...]  ·  <span class="f">resumen</span>: <span class="t">str</span></div>
+        </div>
+      </div>
+
+      <div class="box" style="--c:#2dd4bf; left:1110px; top:450px; width:750px; height:130px">
+        <div class="tag">Guardia final · código, no LLM</div>
+        <div class="sub" style="color:#c9d1d9; margin-top:8px">Re-ejecuta <span class="mono">validator.py</span> sobre el plan y comprueba que cada <span class="mono">regla_id</span> exista en el perfil.</div>
+        <div class="sub"><span style="color:#3fb950; font-weight:600">✓ pasa</span> → guarda la versión en SQLite y publica (paso 5) · <span style="color:#f85149; font-weight:600">✗ falla</span> → se reintenta</div>
+      </div>
+
+      <!-- ===== tools ===== -->
+      <div id="tools"><div class="label">Tools propias <span>· funciones Python que el LLM puede pedir; nosotros las ejecutamos</span></div></div>
+
+      <div class="tool" style="--c:#60a5fa; left:490px">
+        <div class="name">resumen_historial</div>
+        <div class="what">Semanas realizadas, ya agregadas. Nunca sesiones crudas.</div>
+        <div class="io"><span class="dim">entra</span><span class="mono">n_semanas</span></div>
+        <div class="io"><span class="dim">devuelve</span><span class="mono">volumen, carga, D+ / semana</span></div>
+        <div class="chip">ahorra tokens</div>
+        <div class="impl">implementa <span class="mono">calculator.py</span> + SQLite</div>
+      </div>
+
+      <div class="tool" style="--c:#fbbf24; left:763px">
+        <div class="name">obtener_perfil</div>
+        <div class="what">Reglas del perfil activo, incluidas las de ajuste.</div>
+        <div class="io"><span class="dim">entra</span><span class="mono">—</span></div>
+        <div class="io"><span class="dim">devuelve</span><span class="mono">reglas + IDs</span></div>
+        <div class="chip">solo lectura</div>
+        <div class="impl">implementa <span class="mono">engine/loader.py</span></div>
+      </div>
+
+      <div class="tool" style="--c:#56d4dd; left:1036px">
+        <div class="name">obtener_plan</div>
+        <div class="what">Plan vigente: semana detallada, objetivos y esqueleto.</div>
+        <div class="io"><span class="dim">entra</span><span class="mono">—</span></div>
+        <div class="io"><span class="dim">devuelve</span><span class="mono">Plan v(n), 3 niveles</span></div>
+        <div class="chip">versionado</div>
+        <div class="impl">implementa SQLite</div>
+      </div>
+
+      <div class="tool" style="--c:#f472b6; left:1309px">
+        <div class="name">evaluar_semana</div>
+        <div class="what">Adherencia + progreso, y qué acción toca según las reglas de ajuste.</div>
+        <div class="io"><span class="dim">entra</span><span class="mono">semana cerrada</span></div>
+        <div class="io"><span class="dim">devuelve</span><span class="mono">métricas, acción, regla_id</span></div>
+        <div class="chip">solo ajuste semanal</div>
+        <div class="impl">implementa <span class="mono">engine/deviation.py</span></div>
+      </div>
+
+      <div class="tool" style="--c:#2dd4bf; left:1582px">
+        <div class="name">validar_plan</div>
+        <div class="what">El árbitro: comprueba el plan propuesto contra el perfil.</div>
+        <div class="io"><span class="dim">entra</span><span class="mono">Plan propuesto</span></div>
+        <div class="io"><span class="dim">devuelve</span><span class="mono">ok | [{regla_id, ...}]</span></div>
+        <div class="chip">la que decide</div>
+        <div class="impl">implementa <span class="mono">engine/validator.py</span></div>
+      </div>
+
+      <div class="step" style="left:412px; top:540px">0</div>
+      <div class="step" style="left:418px; top:262px">1</div>
+      <div class="step" style="left:755px; top:612px">2</div>
+      <div class="step" style="left:1053px; top:262px">3</div>
+      <div class="step" style="left:1500px; top:413px">4</div>
+      <div class="step" style="left:412px; top:904px">5</div>
+
+    </div>
+    <script>
+      const tl = gsap.timeline({ paused: true });
+      window.__timelines["main"] = tl;
+    </script>
+  </body>
+</html>
