@@ -195,3 +195,33 @@ cada modo (construcción / competición) se decide al transcribirlos.
 **Por qué**: Uphill Athlete encaja con el modo construcción (base aeróbica y
 fuerza para montaña); Nacho Martínez aporta una referencia de trail
 específica en español, útil sobre todo para el modo competición.
+
+## 2026-10-06 — n8n dedicado en el compose, sin exposición pública
+
+**Decisión**: el `docker-compose` del proyecto incluye su propio n8n
+(`n8nio/n8n`, versión fijada). Solo n8n publica un puerto, y únicamente en
+`127.0.0.1` del VPS; al editor se entra con un túnel SSH
+(`ssh -L 5678:localhost:5678 usuario@vps`). `pb-coach` y `garmin-mcp` no
+publican puertos: n8n llama a `pb-coach` por la red interna de Docker. Zona
+horaria del stack: `America/Guayaquil`.
+
+**Por qué**: un n8n propio deja el proyecto autocontenido (un solo
+`docker compose up`, workflows versionables en el repo) y aislado del n8n de
+automatizaciones personales. Nada de lo que hace este n8n (cron, llamar a
+pb-coach, enviar a Telegram) necesita conexiones entrantes, así que el stack
+queda sin superficie pública — importante porque garmin-mcp tiene acceso a la
+cuenta de Garmin. Si en el futuro se quiere exponer (p. ej. un bot de
+Telegram con trigger entrante), se hará en una nueva versión que se conecte
+al n8n online existente.
+
+## 2026-10-06 — uv para entornos y dependencias; imagen Docker con uv
+
+**Decisión**: dependencias declaradas en `pyproject.toml` (grupo `dev` vía
+`[dependency-groups]`), versiones exactas en `uv.lock`, Python 3.12 fijado
+en `.python-version`. El `Dockerfile` copia `uv` desde su imagen oficial
+(versión fijada) e instala con `uv sync --locked`; targets `runtime`
+(usuario no root, healthcheck) y `test`.
+
+**Por qué**: un solo lockfile reproducible tanto en local como en el
+contenedor, instalación rápida y cacheable por capas, y menos piezas que
+mantener que pip + venv + requirements.

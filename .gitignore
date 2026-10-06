@@ -34,7 +34,8 @@ pydantic_example.py
 *.sqlite3
 data/
 
-# Garmin auth tokens (garmin-mcp / garth) — full account access
+# Garmin credentials and auth tokens (garmin-mcp / garth) — full account access
+secrets/
 .garminconnect/
 .garth/
 

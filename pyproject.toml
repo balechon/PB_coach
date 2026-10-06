@@ -3,14 +3,17 @@ name = "pb-coach"
 version = "0.1.0"
 description = "Agente de planificación de entrenamiento que aplica metodología explícita y justifica cada decisión."
 readme = "README.md"
-requires-python = ">=3.11"
+requires-python = ">=3.12"
 dependencies = [
+    "fastapi>=0.115",
     "pydantic>=2",
     "pyyaml>=6",
+    "uvicorn>=0.30",
 ]
 
-[project.optional-dependencies]
+[dependency-groups]
 dev = [
+    "httpx2>=2.13",
     "pytest>=8",
 ]
 
