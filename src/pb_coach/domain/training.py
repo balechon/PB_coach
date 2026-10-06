@@ -146,9 +146,12 @@ class SesionRealizada(BaseModel):
 
     clase_sesion/tipo_sesion son opcionales: Garmin no sabe si un rodaje fue
     Fondo o Recuperación. Esa clasificación la hace engine/, no este modelo.
-    Puede haber clase sin tipo (p. ej. clasificada por zona de FC: se sabe
-    que fue Específico, no si fue Tempo o Series). El descanso no se
+    Se admite clase sin tipo para registros manuales. El descanso no se
     registra como actividad: es la ausencia de una.
+
+    segundos_por_zona es el tiempo real en cada zona de FC. No se resume en
+    una sola zona: en montaña el pulso sube en las subidas y baja en las
+    bajadas, y una zona "predominante" falsearía la intensidad.
     """
 
     fecha: date
@@ -161,7 +164,7 @@ class SesionRealizada(BaseModel):
     desnivel_positivo_m: Optional[float] = Field(default=None, ge=0)
     desnivel_negativo_m: Optional[float] = Field(default=None, ge=0)
     fc_media: Optional[int] = Field(default=None, gt=0)
-    fc_zona: Optional[ZonasFC] = None
+    segundos_por_zona: dict[ZonasFC, float] = Field(default_factory=dict)
     ritmo_medio_min_km: Optional[float] = Field(default=None, gt=0)
     rpe: Optional[int] = Field(default=None, ge=1, le=10)
     sensaciones: Optional[str] = None
@@ -176,6 +179,9 @@ class SesionRealizada(BaseModel):
     def validar_coherencia(self) -> "SesionRealizada":
         if self.duracion <= timedelta(0):
             raise ValueError("duracion de una sesión realizada debe ser positiva")
+        negativos = {z: s for z, s in self.segundos_por_zona.items() if s < 0}
+        if negativos:
+            raise ValueError(f"segundos_por_zona no puede tener tiempos negativos: {negativos}")
         if self.clase_sesion == ClaseSesion.DESCANSO:
             raise ValueError(
                 "Una sesión realizada no puede ser Descanso: el descanso es la ausencia de actividad"

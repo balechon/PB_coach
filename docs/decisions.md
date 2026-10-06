@@ -310,3 +310,30 @@ un esquema temporal y verifican que la migración coincide con los modelos.
 por qué regla; validar al leer impide que un dato inconsistente en la base
 llegue al motor como válido; probar contra el Postgres real evita las
 diferencias de comportamiento que tendría una base de pruebas distinta.
+
+## 2026-10-06 — Sync de Garmin: mapeo, zonas y clasificación
+
+**Decisión**:
+- `mcp_client/garmin.py` traduce actividades de running (`running`,
+  `trail_running`, `track_running`, `treadmill_running`) a `SesionRealizada`
+  con una lista blanca de tools (`get_activities_by_date`, `get_activity`,
+  `get_activity_hr_in_timezones`). Carga EPOC = `training_load`; RPE =
+  `workout_rpe` / 10; sensaciones = `workout_feel`.
+- El RPE y las sensaciones anteriores al 2026-10-07 se ignoran
+  (`GARMIN_RPE_DESDE`): antes no se registraban con criterio.
+- En trail el terreno queda vacío (Garmin no distingue camino, sendero o alta
+  montaña): cuenta el desnivel. `running` → Asfalto, `track_running` → Pista.
+- `SesionRealizada` guarda los segundos reales en cada zona de FC
+  (`segundos_por_zona`) en vez de una sola zona, y **las sesiones ya no se
+  clasifican por zona**: solo heredan la clase de la sesión planificada del
+  mismo día; sin pareja quedan sin clasificar.
+- `pb_coach.sync` trae desde la última fecha guardada (la primera vez, 56
+  días de línea base) y guarda sin duplicar.
+
+**Por qué**: en montaña el pulso sube en las subidas aunque el esfuerzo sea
+de fondo, y en este atleta incluso la base cae en Z3–Z4 (en sus datos reales,
+50–68% del tiempo semanal en Z4). Clasificar por zona confundiría Fondo con
+Específico; resumir en una zona falsearía la intensidad. Las zonas de Garmin
+por defecto probablemente no reflejan su umbral aeróbico real: conviene
+fijarlas con el test que proponga la metodología (pendiente al transcribir
+el perfil).

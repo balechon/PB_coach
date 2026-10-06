@@ -168,6 +168,16 @@ def test_sesion_realizada_rechaza_rpe_fuera_de_rango():
         )
 
 
+def test_sesion_realizada_rechaza_segundos_negativos_en_zona():
+    with pytest.raises(ValidationError, match="tiempos negativos"):
+        SesionRealizada(
+            fecha=date(2026, 10, 13),
+            duracion=timedelta(minutes=40),
+            distancia_km=7,
+            segundos_por_zona={ZonasFC.Z2: -5},
+        )
+
+
 def test_sesion_realizada_rechaza_carga_epoc_negativa():
     with pytest.raises(ValidationError):
         SesionRealizada(

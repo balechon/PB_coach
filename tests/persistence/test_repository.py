@@ -3,23 +3,15 @@
 #
 #   docker compose run --rm --build test
 #
-# Cada ejecución crea un esquema temporal, aplica las migraciones de Alembic
-# en él y lo borra al terminar: nunca toca las tablas reales. Cada test corre
-# dentro de una transacción que se deshace al final.
+# Los fixtures `engine` (esquema temporal con las migraciones aplicadas) y
+# `db` (transacción que se deshace al final) están en conftest.py.
 
-import os
-import uuid
 from datetime import date, timedelta
-from pathlib import Path
 
 import pytest
-from alembic import command
 from alembic.autogenerate import compare_metadata
-from alembic.config import Config
 from alembic.migration import MigrationContext
 from pydantic import ValidationError
-from sqlalchemy import create_engine, text
-from sqlalchemy.orm import Session
 
 from pb_coach.domain.training import (
     ClaseSesion,
@@ -37,44 +29,6 @@ from pb_coach.domain.training import (
 )
 from pb_coach.persistence import repository as repo
 from pb_coach.persistence.models import Base, PlanVersionFila
-
-URL = os.environ.get("TEST_DATABASE_URL")
-pytestmark = pytest.mark.skipif(not URL, reason="TEST_DATABASE_URL no definida (correr con docker compose run --rm test)")
-
-ALEMBIC_INI = Path(__file__).parents[2] / "alembic.ini"
-
-
-@pytest.fixture(scope="module")
-def engine():
-    esquema = f"test_{uuid.uuid4().hex[:8]}"
-    admin = create_engine(URL)
-    with admin.begin() as conexion:
-        conexion.execute(text(f'CREATE SCHEMA "{esquema}"'))
-
-    engine = create_engine(URL, connect_args={"options": f"-csearch_path={esquema}"})
-    config = Config(str(ALEMBIC_INI))
-    with engine.begin() as conexion:
-        config.attributes["connection"] = conexion
-        command.upgrade(config, "head")
-
-    yield engine
-
-    engine.dispose()
-    with admin.begin() as conexion:
-        conexion.execute(text(f'DROP SCHEMA "{esquema}" CASCADE'))
-    admin.dispose()
-
-
-@pytest.fixture
-def db(engine):
-    conexion = engine.connect()
-    transaccion = conexion.begin()
-    sesion = Session(bind=conexion, join_transaction_mode="create_savepoint", expire_on_commit=False)
-    yield sesion
-    sesion.close()
-    transaccion.rollback()
-    conexion.close()
-
 
 def _sesion(dia: int, garmin_id=None, **campos) -> SesionRealizada:
     return SesionRealizada(
@@ -127,7 +81,7 @@ def test_sesion_ida_y_vuelta_conserva_todos_los_campos(db):
         tipo_sesion=TipoSesion.SERIES,
         desnivel_positivo_m=420,
         fc_media=161,
-        fc_zona=ZonasFC.Z4,
+        segundos_por_zona={ZonasFC.Z2: 1200.5, ZonasFC.Z4: 2994.4},
         rpe=8,
         sensaciones="Piernas pesadas en la subida",
         carga_epoc=145.5,

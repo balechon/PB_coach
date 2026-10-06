@@ -46,9 +46,14 @@ def _planificada(dia, clase, tipo=None, km=8) -> SesionPlanificada:
     return SesionPlanificada(fecha=_dia(dia), clase_sesion=clase, tipo_sesion=tipo, distancia_objetivo_km=km)
 
 
-def _realizada(dia, minutos=60, km=10.0, zona=None, rpe=None, clase=None) -> SesionRealizada:
+def _realizada(dia, minutos=60, km=10.0, zonas=None, rpe=None, clase=None) -> SesionRealizada:
     return SesionRealizada(
-        fecha=_dia(dia), duracion=timedelta(minutes=minutos), distancia_km=km, fc_zona=zona, rpe=rpe, clase_sesion=clase
+        fecha=_dia(dia),
+        duracion=timedelta(minutes=minutos),
+        distancia_km=km,
+        segundos_por_zona=zonas or {},
+        rpe=rpe,
+        clase_sesion=clase,
     )
 
 
@@ -109,27 +114,19 @@ PROGRESAR_SI_MEJORA = _regla("X-AJUSTE-003", TEST, MAYOR, 0, AccionAjuste.PROGRE
 # ---------- clasificar_sesiones ----------
 
 def test_clasifica_por_sesion_planificada_del_mismo_dia():
-    clasificadas = clasificar_sesiones([_realizada(1, zona=ZonasFC.Z2)], PLAN_SEMANA)
-    # Hereda lo planificado aunque la zona dijera otra cosa.
-    assert (clasificadas[0].clase_sesion, clasificadas[0].tipo_sesion) == (ClaseSesion.ESPECIFICO, TipoSesion.SERIES)
+    # Un Fondo en montaña con mucho Z4 sigue siendo Fondo: manda lo planificado.
+    clasificadas = clasificar_sesiones([_realizada(3, zonas={ZonasFC.Z4: 3000, ZonasFC.Z2: 600})], PLAN_SEMANA)
+    assert (clasificadas[0].clase_sesion, clasificadas[0].tipo_sesion) == (ClaseSesion.FONDO, TipoSesion.BASE)
 
 
-def test_sin_planificada_clasifica_solo_la_clase_por_zona():
-    clasificadas = clasificar_sesiones([_realizada(2, zona=ZonasFC.Z4), _realizada(4, zona=ZonasFC.Z2)], PLAN_SEMANA)
-    assert [(s.clase_sesion, s.tipo_sesion) for s in clasificadas] == [
-        (ClaseSesion.ESPECIFICO, None),
-        (ClaseSesion.FONDO, None),
-    ]
-
-
-def test_z1_o_sin_zona_queda_sin_clasificar():
-    clasificadas = clasificar_sesiones([_realizada(2, zona=ZonasFC.Z1), _realizada(5)], PLAN_SEMANA)
+def test_sin_planificada_queda_sin_clasificar_aunque_tenga_zonas():
+    clasificadas = clasificar_sesiones([_realizada(2, zonas={ZonasFC.Z4: 3000}), _realizada(4)], PLAN_SEMANA)
     assert all(s.clase_sesion is None for s in clasificadas)
 
 
 def test_un_dia_de_descanso_planificado_no_clasifica_una_actividad():
-    clasificadas = clasificar_sesiones([_realizada(0, zona=ZonasFC.Z2)], PLAN_SEMANA)
-    assert clasificadas[0].clase_sesion == ClaseSesion.FONDO  # por zona, no por el Descanso
+    clasificadas = clasificar_sesiones([_realizada(0)], PLAN_SEMANA)
+    assert clasificadas[0].clase_sesion is None
 
 
 def test_cada_planificada_empareja_una_sola_realizada():

@@ -31,10 +31,12 @@ _CAMPOS_SESION = list(SesionRealizada.model_fields)
 
 
 def _sesion_a_fila(sesion: SesionRealizada) -> dict[str, Any]:
-    return {
+    fila = {
         campo: valor.value if isinstance(valor, Enum) else valor
         for campo, valor in sesion.model_dump().items()
     }
+    fila["segundos_por_zona"] = {zona.value: s for zona, s in sesion.segundos_por_zona.items()}
+    return fila
 
 
 def _fila_a_sesion(fila: SesionRealizadaFila) -> SesionRealizada:

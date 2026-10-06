@@ -1,0 +1,68 @@
+# Sincronización Garmin → Postgres. Determinista, sin LLM.
+#
+# Trae las actividades desde la última fecha guardada (incluida: ese día pudo
+# haber más de una) hasta hoy y las guarda sin duplicar. La primera vez trae
+# las últimas DIAS_INICIALES semanas como línea base.
+#
+#   docker compose exec pb-coach python -m pb_coach.sync
+
+import asyncio
+import os
+from datetime import date, timedelta
+from typing import Optional
+
+from pydantic import BaseModel
+from sqlalchemy.orm import sessionmaker
+
+from pb_coach.mcp_client.garmin import ClienteGarmin, traer_sesiones
+from pb_coach.persistence import repository as repo
+from pb_coach.persistence.db import crear_engine, crear_sesiones
+
+DIAS_INICIALES = 56
+
+# El RPE anterior a esta fecha no se registraba con criterio: se ignora.
+RPE_DESDE_POR_DEFECTO = date(2026, 10, 7)
+
+
+class ResultadoSync(BaseModel):
+    desde: date
+    hasta: date
+    traidas: int
+    nuevas: int
+
+
+def _rpe_desde() -> date:
+    valor = os.environ.get("GARMIN_RPE_DESDE")
+    return date.fromisoformat(valor) if valor else RPE_DESDE_POR_DEFECTO
+
+
+async def sincronizar(
+    sesiones_db: sessionmaker,
+    cliente: ClienteGarmin,
+    hoy: Optional[date] = None,
+    rpe_desde: Optional[date] = None,
+) -> ResultadoSync:
+    hoy = hoy or date.today()
+    with sesiones_db() as db:
+        ultima = repo.ultima_fecha_sincronizada(db)
+    desde = ultima or hoy - timedelta(days=DIAS_INICIALES)
+
+    sesiones = await traer_sesiones(cliente, desde, hoy, rpe_desde)
+
+    with sesiones_db.begin() as db:
+        nuevas = repo.guardar_sesiones(db, sesiones)
+    return ResultadoSync(desde=desde, hasta=hoy, traidas=len(sesiones), nuevas=nuevas)
+
+
+async def _main() -> None:
+    sesiones_db = crear_sesiones(crear_engine())
+    async with ClienteGarmin() as cliente:
+        resultado = await sincronizar(sesiones_db, cliente, rpe_desde=_rpe_desde())
+    print(
+        f"Sync {resultado.desde} → {resultado.hasta}: "
+        f"{resultado.traidas} actividades de running, {resultado.nuevas} nuevas."
+    )
+
+
+if __name__ == "__main__":
+    asyncio.run(_main())

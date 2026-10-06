@@ -83,8 +83,8 @@ def resumir_periodo(
 
     duracion_por_zona: dict[ZonasFC, timedelta] = {}
     for s in dentro:
-        if s.fc_zona is not None:
-            duracion_por_zona[s.fc_zona] = duracion_por_zona.get(s.fc_zona, timedelta(0)) + s.duracion
+        for zona, segundos in s.segundos_por_zona.items():
+            duracion_por_zona[zona] = duracion_por_zona.get(zona, timedelta(0)) + timedelta(seconds=segundos)
 
     return ResumenPeriodo(
         fecha_inicio=fecha_inicio,

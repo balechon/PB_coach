@@ -18,7 +18,7 @@ LUNES = date(2026, 10, 12)
 DOMINGO = date(2026, 10, 18)
 
 
-def _sesion(fecha, minutos, km, d_mas=None, clase=None, tipo=None, zona=None, epoc=None, rpe=None) -> SesionRealizada:
+def _sesion(fecha, minutos, km, d_mas=None, clase=None, tipo=None, zonas=None, epoc=None, rpe=None) -> SesionRealizada:
     return SesionRealizada(
         fecha=fecha,
         duracion=timedelta(minutes=minutos),
@@ -26,17 +26,21 @@ def _sesion(fecha, minutos, km, d_mas=None, clase=None, tipo=None, zona=None, ep
         desnivel_positivo_m=d_mas,
         clase_sesion=clase,
         tipo_sesion=tipo,
-        fc_zona=zona,
+        segundos_por_zona=zonas or {},
         carga_epoc=epoc,
         rpe=rpe,
     )
 
 
 SEMANA = [
-    _sesion(date(2026, 10, 13), 50, 8.0, 40, ClaseSesion.ESPECIFICO, TipoSesion.SERIES, ZonasFC.Z4),
-    _sesion(date(2026, 10, 15), 60, 10.5, 150, ClaseSesion.FONDO, TipoSesion.BASE, ZonasFC.Z2),
-    _sesion(date(2026, 10, 18), 150, 18.25, 900, ClaseSesion.FONDO, TipoSesion.FONDO, ZonasFC.Z2),
-    _sesion(date(2026, 10, 16), 30, 5.0),  # sin clasificar, sin D+, sin zona
+    _sesion(date(2026, 10, 13), 50, 8.0, 40, ClaseSesion.ESPECIFICO, TipoSesion.SERIES,
+            {ZonasFC.Z2: 900, ZonasFC.Z4: 2100}),
+    _sesion(date(2026, 10, 15), 60, 10.5, 150, ClaseSesion.FONDO, TipoSesion.BASE,
+            {ZonasFC.Z2: 3000, ZonasFC.Z3: 600}),
+    # Trail largo: el pulso sube en las cuestas aunque sea Fondo.
+    _sesion(date(2026, 10, 18), 150, 18.25, 900, ClaseSesion.FONDO, TipoSesion.FONDO,
+            {ZonasFC.Z2: 4200, ZonasFC.Z3: 3000, ZonasFC.Z4: 1800}),
+    _sesion(date(2026, 10, 16), 30, 5.0),  # sin clasificar, sin D+, sin zonas
 ]
 
 
@@ -63,11 +67,12 @@ def test_resumen_cuenta_por_clase_y_separa_sin_clasificar():
     assert resumen.sesiones_sin_clasificar == 1
 
 
-def test_resumen_acumula_tiempo_por_zona():
+def test_resumen_suma_el_tiempo_real_en_cada_zona():
     resumen = resumir_periodo(SEMANA, LUNES, DOMINGO)
     assert resumen.duracion_por_zona == {
-        ZonasFC.Z2: timedelta(minutes=210),
-        ZonasFC.Z4: timedelta(minutes=50),
+        ZonasFC.Z2: timedelta(seconds=900 + 3000 + 4200),
+        ZonasFC.Z3: timedelta(seconds=600 + 3000),
+        ZonasFC.Z4: timedelta(seconds=2100 + 1800),
     }
 
 

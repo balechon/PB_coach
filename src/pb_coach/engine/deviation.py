@@ -23,7 +23,6 @@ from pb_coach.domain.training import (
     Microciclo,
     SesionPlanificada,
     SesionRealizada,
-    ZonasFC,
 )
 from pb_coach.engine.calculator import ResumenPeriodo, resumir_periodo
 from pb_coach.engine.validator import ReglaNoEvaluable
@@ -38,15 +37,6 @@ PRIORIDAD_ACCIONES: list[AccionAjuste] = [
     AccionAjuste.MANTENER,
     AccionAjuste.PROGRESAR,
 ]
-
-# Clase deducible solo por zona de FC (ver comentarios de ClaseSesion). Z1
-# es ambigua (Fondo o Recuperación), así que no se clasifica.
-_CLASE_POR_ZONA: dict[ZonasFC, ClaseSesion] = {
-    ZonasFC.Z2: ClaseSesion.FONDO,
-    ZonasFC.Z3: ClaseSesion.ESPECIFICO,
-    ZonasFC.Z4: ClaseSesion.ESPECIFICO,
-    ZonasFC.Z5: ClaseSesion.ESPECIFICO,
-}
 
 _OPERADORES = {
     OperadorComparacion.MENOR: operator.lt,
@@ -81,12 +71,14 @@ class EvaluacionSemana(BaseModel):
 def clasificar_sesiones(
     realizadas: list[SesionRealizada], planificadas: list[SesionPlanificada]
 ) -> list[SesionRealizada]:
-    """Asigna clase (y tipo cuando se puede) a las sesiones sin clasificar.
+    """Asigna clase y tipo a las sesiones sin clasificar emparejándolas con
+    la sesión planificada con carga del mismo día (cada planificada se
+    empareja con una sola realizada). Sin pareja, la sesión queda sin
+    clasificar.
 
-    1. Si hay una sesión planificada con carga ese mismo día y aún sin
-       emparejar, la realizada hereda su clase y tipo.
-    2. Si no, se deduce solo la clase por la zona de FC (Z2 → Fondo,
-       Z3–Z5 → Específico). Z1 o sin zona: queda sin clasificar.
+    No se clasifica por zona de FC: en montaña el pulso sube en las subidas
+    aunque el esfuerzo sea de fondo, y en este atleta incluso la base cae en
+    zonas altas, así que la zona confundiría Fondo con Específico.
 
     Las sesiones que ya traen clase no se tocan. Devuelve copias: la
     entrada no se modifica.
@@ -99,14 +91,13 @@ def clasificar_sesiones(
             continue
 
         pareja = next((p for p in pendientes if p.fecha == sesion.fecha), None)
-        if pareja is not None:
-            pendientes.remove(pareja)
-            cambios = {"clase_sesion": pareja.clase_sesion, "tipo_sesion": pareja.tipo_sesion}
-        elif sesion.fc_zona in _CLASE_POR_ZONA:
-            cambios = {"clase_sesion": _CLASE_POR_ZONA[sesion.fc_zona]}
-        else:
-            cambios = {}
-        resultado.append(sesion.model_copy(update=cambios))
+        if pareja is None:
+            resultado.append(sesion)
+            continue
+        pendientes.remove(pareja)
+        resultado.append(
+            sesion.model_copy(update={"clase_sesion": pareja.clase_sesion, "tipo_sesion": pareja.tipo_sesion})
+        )
     return resultado
 
 
