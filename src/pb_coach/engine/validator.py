@@ -124,8 +124,13 @@ def _volumen_comparable(anterior: Microciclo, actual: Microciclo) -> Optional[tu
 
 def _incremento_maximo(plan: Plan, regla: RegistroRegla, maximo_pct: float) -> list[Violacion]:
     """El volumen de una semana de carga no sube más de `maximo_pct` respecto
-    a la semana de carga anterior. Las semanas de descarga no cuentan como
-    referencia: volver al nivel previo tras una descarga no es progresar."""
+    a la semana de carga anterior.
+
+    Las semanas de descarga no cuentan como referencia: tras una descarga se
+    vuelve al nivel previo y se sigue progresando, así que la primera semana
+    de carga después se compara con la última de carga antes de la descarga
+    (40 → descarga 30 → 44 es +10%), nunca con la descarga (que daría +47%
+    y permitiría saltos grandes)."""
     violaciones = []
     referencia: Optional[Microciclo] = None
     for micro, meso in _microciclos(plan):

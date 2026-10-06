@@ -242,3 +242,16 @@ es el estándar de la literatura cuando falta. Están en escalas distintas
 (~120 vs ~420 para la misma sesión), así que mezclarlas falsearía cualquier
 porcentaje de progresión. Los objetivos en tiempo reflejan cómo se planifica
 en trail y en Uphill Athlete, donde los km con desnivel no son comparables.
+
+## 2026-10-06 — Progresión: la descarga no es referencia
+
+**Decisión**: en las reglas de incremento máximo de volumen, cada semana de
+carga se compara con la **última semana de carga**, nunca con una de
+descarga. Tras una descarga se vuelve al nivel previo y se sigue
+progresando con el mismo límite (40 → 44 → descarga 30 → 48 es válido;
+→ 55 es un salto del +25% y es violación).
+
+**Por qué**: así es como se trabaja la descarga (bajar, volver al nivel
+anterior y seguir subiendo de forma progresiva). Comparar contra la
+descarga marcaría como violación cada vuelta normal y, a la vez, abriría la
+puerta a saltos grandes justo después de descargar.

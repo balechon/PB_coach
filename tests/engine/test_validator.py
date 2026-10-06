@@ -178,10 +178,19 @@ def test_incremento_compara_en_horas_si_ambas_semanas_las_tienen():
     assert "duración" in resultado.violaciones[0].mensaje
 
 
-def test_incremento_ignora_descarga_como_referencia():
-    # 40 -> descarga 28 -> 44: respecto a la última carga (40) es +10%, válido.
-    plan = _plan((BASE, [_micro(0, km=40), _micro(1, DESCARGA, km=28), _micro(2, km=44)]))
+def test_tras_descarga_se_vuelve_al_nivel_previo_y_se_progresa():
+    # 40 -> 44 -> descarga 30 -> 48: +9% sobre la última carga (44), válido.
+    plan = _plan((BASE, [_micro(0, km=40), _micro(1, km=44), _micro(2, DESCARGA, km=30), _micro(3, km=48)]))
     assert validar_plan(plan, _perfil(reglas=[_progresion()])).valido
+
+
+def test_tras_descarga_un_salto_sigue_siendo_violacion():
+    # 40 -> 44 -> descarga 30 -> 55: +25% sobre la última carga (44).
+    plan = _plan((BASE, [_micro(0, km=40), _micro(1, km=44), _micro(2, DESCARGA, km=30), _micro(3, km=55)]))
+    resultado = validar_plan(plan, _perfil(reglas=[_progresion()]))
+    assert len(resultado.violaciones) == 1
+    assert "25.0%" in resultado.violaciones[0].mensaje
+    assert str(LUNES + timedelta(weeks=1)) in resultado.violaciones[0].mensaje  # referencia: la semana de 44
 
 
 def test_incremento_solo_aplica_al_objetivo_de_la_regla():
