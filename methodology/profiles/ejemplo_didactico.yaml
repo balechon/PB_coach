@@ -1,0 +1,109 @@
+# PERFIL DE EJEMPLO / DIDÁCTICO — NO es la transcripción fiel de ningún
+# libro, autor o metodología publicada real.
+#
+# Este proyecto exige que los perfiles de metodología se transcriban a
+# mano, por un humano, desde una fuente verificable (ver
+# methodology/README.md y docs/decisions.md) — precisamente para que el
+# sistema "nunca invente metodología, la aplica". Un LLM no debe rellenar
+# el contenido de un perfil real citando un autor publicado, porque no hay
+# forma de verificar la fidelidad de esa transcripción.
+#
+# Este archivo existe solo para poder desarrollar y probar
+# engine/loader.py (Etapa 2) con un YAML de tamaño realista. Las reglas
+# aquí están inspiradas en principios generales y ampliamente conocidos de
+# periodización del entrenamiento (progresión gradual de carga, alternancia
+# carga/descarga, evitar acumular estímulos de alta intensidad sin
+# recuperación) — no en un texto específico de un autor.
+#
+# Cuando transcribas tu propio perfil real (ej. de un libro o curso que
+# hayas estudiado), sigue esta misma estructura pero cita tu fuente real
+# en el campo `fuente`.
+
+autor: "EJEMPLO_DIDACTICO"
+fuente: "Ninguna — perfil sintético para pruebas, ver comentario al inicio de este archivo."
+version: "0.1.0"
+
+deportes_soportados:
+  - "running"
+  - "trail running"
+
+# ---------------------------------------------------------------------
+# reglas: RegistroRegla — condiciones sobre UNA sesión.
+# ---------------------------------------------------------------------
+reglas:
+  - id: "EJEMPLO-PROGRESION-001"
+    categoria: "Progresión"
+    descripcion: "En mesociclos de base aeróbica, el volumen semanal no debe subir más del 10% respecto a la semana anterior."
+    objetivo_mesociclo: "Base aeróbica"
+    parametros:
+      incremento_maximo_pct: 10
+
+  - id: "EJEMPLO-PROGRESION-002"
+    categoria: "Progresión"
+    descripcion: "En mesociclos específicos de competencia, el volumen semanal no debe subir más del 5% respecto a la semana anterior (el foco está en intensidad, no en volumen)."
+    objetivo_mesociclo: "Específico competencia"
+    parametros:
+      incremento_maximo_pct: 5
+
+  - id: "EJEMPLO-INTENSIDAD-001"
+    categoria: "Intensidad"
+    descripcion: "Las sesiones de tipo Series deben realizarse en zona de frecuencia cardíaca Z4 o Z5."
+    tipo_sesion: "Series"
+    parametros:
+      zona_fc_minima: "Z4"
+
+  - id: "EJEMPLO-DESCANSO-001"
+    categoria: "Descanso"
+    descripcion: "Cada 3 microciclos de carga debe seguir un microciclo de descarga."
+    parametros:
+      microciclos_carga_antes_descarga: 3
+
+# ---------------------------------------------------------------------
+# restricciones_globales: RestriccionGlobal — alcance del Plan completo.
+# ---------------------------------------------------------------------
+restricciones_globales:
+  - id: "EJEMPLO-GLOBAL-001"
+    descripcion: "No debe haber más de 3 microciclos de carga consecutivos sin un microciclo de descarga entre ellos."
+    parametros:
+      microciclos_carga_max: 3
+
+  - id: "EJEMPLO-GLOBAL-002"
+    descripcion: "Un plan orientado a una carrera de más de 21km requiere al menos 16 semanas de preparación."
+    parametros:
+      distancia_umbral_km: 21
+      semanas_minimas: 16
+
+# ---------------------------------------------------------------------
+# reglas_secuenciales: RegistroReglaSecuencial — relación entre una
+# sesión y la sesión inmediatamente anterior dentro de un microciclo.
+# ---------------------------------------------------------------------
+reglas_secuenciales:
+  - id: "EJEMPLO-SECUENCIA-001"
+    descripcion: "Después de un entrenamiento Fondo, máximo puede hacerse un Recuperación o Descanso."
+    clase_sesion_previa: "Fondo"
+    clases_permitidas_despues:
+      - "Recuperación"
+      - "Descanso"
+
+  - id: "EJEMPLO-SECUENCIA-002"
+    descripcion: "No puede haber dos entrenamientos Específico seguidos."
+    clase_sesion_previa: "Específico"
+    clases_permitidas_despues:
+      - "Fondo"
+      - "Recuperación"
+      - "Descanso"
+
+# ---------------------------------------------------------------------
+# reglas_conteo_microciclo: ReglaConteoMicrociclo — cuántas sesiones de
+# una clase dada debe/puede haber dentro de un microciclo.
+# ---------------------------------------------------------------------
+reglas_conteo_microciclo:
+  - id: "EJEMPLO-CONTEO-001"
+    descripcion: "Mínimo debe haber un día de entrenamiento Descanso por microciclo."
+    clase_sesion: "Descanso"
+    minimo: 1
+
+  - id: "EJEMPLO-CONTEO-002"
+    descripcion: "Como máximo puede haber 3 entrenamientos de tipo Específico por microciclo."
+    clase_sesion: "Específico"
+    maximo: 3

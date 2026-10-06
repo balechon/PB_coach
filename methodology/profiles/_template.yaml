@@ -3,28 +3,75 @@
 # fuente (libro, paper, apuntes). Ver methodology/README.md para la
 # convención de IDs de regla.
 #
-# Este archivo es solo un esqueleto orientativo: el modelo tipado definitivo
-# vivirá en src/pb_coach/domain/methodology.py y puede exigir/permitir más
-# campos de los que aquí se muestran.
+# Este archivo refleja el modelo tipado en src/pb_coach/domain/methodology.py
+# (PerfilMetodologia). Los valores de clase_sesion, tipo_sesion y
+# objetivo_mesociclo deben coincidir EXACTAMENTE con los strings de los
+# Enums definidos en src/pb_coach/domain/training.py (ClaseSesion,
+# TipoSesion, ObjetivoMesociclo) — el loader (Etapa 2) los va a validar
+# contra esos Enums, no acepta cualquier texto.
 
 autor: "NOMBRE_AUTOR"           # ej. "Lydiard"
 fuente: ""                       # referencia bibliográfica de dónde sale esto
 version: "0.1.0"
 
 deportes_soportados:
-  - ""                            # ej. "running", "ciclismo"
+  - ""                            # ej. "running", "trail running"
 
+# ---------------------------------------------------------------------
+# reglas: RegistroRegla — condiciones sobre UNA sesión.
+# categoria es una de: Carga | Progresión | Descanso | Intensidad
+# objetivo_mesociclo / clase_sesion / tipo_sesion son OPCIONALES: si se
+# omiten, la regla se interpreta como "aplica siempre, sin condición".
+# ---------------------------------------------------------------------
 reglas:
-  # Cada regla debe tener un ID único (ver convención en README.md),
-  # una descripción en lenguaje natural y los parámetros que el motor
-  # determinista necesita para aplicarla.
-  - id: "AUTOR-CATEGORIA-001"
-    categoria: ""                 # CARGA | PROGRESION | DESCANSO | SECUENCIA | INTENSIDAD
-    descripcion: ""                # texto citable, en lenguaje natural
-    parametros: {}                 # valores/umbrales que el engine consume
+  - id: "LYDIARD-PROGRESION-001"
+    categoria: "Progresión"
+    descripcion: "En mesociclos de base aeróbica, el volumen semanal no debe subir más del 10% respecto a la semana anterior."
+    objetivo_mesociclo: "Base aeróbica"
+    parametros:
+      incremento_maximo_pct: 10
 
+# ---------------------------------------------------------------------
+# restricciones_globales: RestriccionGlobal — alcance del Plan completo,
+# no de una sesión/mesociclo puntual.
+# ---------------------------------------------------------------------
 restricciones_globales:
-  # Reglas que aplican al plan completo, no a un mesociclo/sesión individual.
-  # ej. "un solo deporte por mesociclo" si este autor lo exige explícitamente.
-  - id: "AUTOR-SECUENCIA-001"
-    descripcion: ""
+  - id: "AUTOR-GLOBAL-001"
+    descripcion: ""            # ej. "no más de 3 microciclos de carga seguidos sin descarga"
+    parametros:
+      microciclos_carga_max: 3
+
+# ---------------------------------------------------------------------
+# reglas_secuenciales: RegistroReglaSecuencial — relación entre una
+# sesión y la sesión inmediatamente anterior dentro de un microciclo.
+# clases_permitidas_despues es una lista de PERMITIDAS, no de prohibidas:
+# cualquier ClaseSesion ausente de la lista queda prohibida después de
+# clase_sesion_previa. Ojo: para expresar "todo menos X", hay que
+# enumerar activamente el resto — no basta con omitir X.
+# ---------------------------------------------------------------------
+reglas_secuenciales:
+  - id: "LYDIARD-SECUENCIA-001"
+    descripcion: "Después de un entrenamiento Fondo, máximo puede hacerse un Recuperación."
+    clase_sesion_previa: "Fondo"
+    clases_permitidas_despues:
+      - "Recuperación"
+      - "Descanso"
+
+  - id: "LYDIARD-SECUENCIA-002"
+    descripcion: "No puede haber dos entrenamientos Específico seguidos."
+    clase_sesion_previa: "Específico"
+    clases_permitidas_despues:
+      - "Fondo"
+      - "Recuperación"
+      - "Descanso"
+
+# ---------------------------------------------------------------------
+# reglas_conteo_microciclo: ReglaConteoMicrociclo — cuántas sesiones de
+# una clase dada debe/puede haber dentro de un microciclo. Al menos uno
+# de minimo/maximo es obligatorio (ambos si aplica un rango).
+# ---------------------------------------------------------------------
+reglas_conteo_microciclo:
+  - id: "LYDIARD-CONTEO-001"
+    descripcion: "Mínimo debe haber un día de entrenamiento Descanso por microciclo."
+    clase_sesion: "Descanso"
+    minimo: 1
