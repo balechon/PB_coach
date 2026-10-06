@@ -145,7 +145,7 @@
       <div class="box" style="--c:#56d4dd; left:60px; top:490px; width:340px; height:130px">
         <div class="tag">Paso 0 · antes del agente · sin LLM</div>
         <h2>sync</h2>
-        <div class="sub">Actividades nuevas → <span class="mono">SesionRealizada</span> (Pydantic) → SQLite.</div>
+        <div class="sub">Actividades nuevas → <span class="mono">SesionRealizada</span> (Pydantic) → Postgres.</div>
       </div>
       <div class="box" style="--c:#f472b6; left:60px; top:654px; width:340px; height:126px; border-style:dashed">
         <div class="tag">Contenedor · red interna</div>
@@ -199,7 +199,7 @@
       <div class="box" style="--c:#2dd4bf; left:1110px; top:450px; width:750px; height:130px">
         <div class="tag">Guardia final · código, no LLM</div>
         <div class="sub" style="color:#c9d1d9; margin-top:8px">Re-ejecuta <span class="mono">validator.py</span> sobre el plan y comprueba que cada <span class="mono">regla_id</span> exista en el perfil.</div>
-        <div class="sub"><span style="color:#3fb950; font-weight:600">✓ pasa</span> → guarda la versión en SQLite y publica (paso 5) · <span style="color:#f85149; font-weight:600">✗ falla</span> → se reintenta</div>
+        <div class="sub"><span style="color:#3fb950; font-weight:600">✓ pasa</span> → guarda la versión en Postgres y publica (paso 5) · <span style="color:#f85149; font-weight:600">✗ falla</span> → se reintenta</div>
       </div>
 
       <!-- ===== tools ===== -->
@@ -211,7 +211,7 @@
         <div class="io"><span class="dim">entra</span><span class="mono">n_semanas</span></div>
         <div class="io"><span class="dim">devuelve</span><span class="mono">volumen, carga, D+ / semana</span></div>
         <div class="chip">ahorra tokens</div>
-        <div class="impl">implementa <span class="mono">calculator.py</span> + SQLite</div>
+        <div class="impl">implementa <span class="mono">calculator.py</span> + Postgres</div>
       </div>
 
       <div class="tool" style="--c:#fbbf24; left:763px">
@@ -229,7 +229,7 @@
         <div class="io"><span class="dim">entra</span><span class="mono">—</span></div>
         <div class="io"><span class="dim">devuelve</span><span class="mono">Plan v(n), 3 niveles</span></div>
         <div class="chip">versionado</div>
-        <div class="impl">implementa SQLite</div>
+        <div class="impl">implementa Postgres (JSONB)</div>
       </div>
 
       <div class="tool" style="--c:#f472b6; left:1309px">

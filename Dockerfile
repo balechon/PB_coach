@@ -41,9 +41,7 @@ CMD ["pytest", "-q"]
 
 FROM base AS runtime
 
-RUN useradd --create-home --uid 1000 app \
-    && mkdir -p /app/data \
-    && chown app:app /app/data
+RUN useradd --create-home --uid 1000 app
 USER app
 
 EXPOSE 8000

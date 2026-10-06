@@ -169,7 +169,7 @@
 
       <!-- ===== docker service ===== -->
       <div id="docker">
-        <div class="label"><span class="dot todo" style="border-color:#2496ed"></span>Contenedor Docker · servicio pb-coach</div>
+        <div class="label"><span class="dot todo" style="border-color:#2496ed"></span>Docker · pb-coach y postgres (red interna)</div>
       </div>
 
       <div class="box" style="--c:#f0883e; left:500px; top:230px; width:570px; height:110px">
@@ -179,8 +179,8 @@
       </div>
 
       <div class="box" style="--c:#56d4dd; left:1110px; top:230px; width:300px; height:110px">
-        <div class="tag">volumen · SQLite</div>
-        <h2>Base de datos</h2>
+        <div class="tag">servicio postgres · JSONB</div>
+        <h2>PostgreSQL</h2>
         <div class="sub">Planes versionados, sesiones</div>
       </div>
 
@@ -190,10 +190,10 @@
         <h2>Motor determinista</h2>
         <div class="sub">Funciones puras, sin IO ni LLM. Única autoridad sobre «¿cumple la metodología?».</div>
         <div class="items">
-          <div class="item"><span class="dot part"></span><span class="mono">loader.py</span><span class="note">YAML → modelo</span></div>
-          <div class="item"><span class="dot todo"></span><span class="mono">calculator.py</span><span class="note">carga / volumen</span></div>
-          <div class="item"><span class="dot todo"></span><span class="mono">validator.py</span><span class="note">violaciones + ID</span></div>
-          <div class="item"><span class="dot todo"></span><span class="mono">deviation.py</span><span class="note">plan vs. real</span></div>
+          <div class="item"><span class="dot done"></span><span class="mono">loader.py</span><span class="note">YAML → modelo</span></div>
+          <div class="item"><span class="dot done"></span><span class="mono">calculator.py</span><span class="note">carga / volumen</span></div>
+          <div class="item"><span class="dot done"></span><span class="mono">validator.py</span><span class="note">violaciones + ID</span></div>
+          <div class="item"><span class="dot done"></span><span class="mono">deviation.py</span><span class="note">plan vs. real</span></div>
         </div>
       </div>
 
@@ -222,7 +222,7 @@
           <div class="item"><span class="dot done"></span><span class="mono">training.py</span></div>
           <div class="item"><span class="dot done"></span><span class="mono">methodology.py</span></div>
         </div>
-        <div class="pill">20 tests · usado por todas las capas</div>
+        <div class="pill">usado por todas las capas</div>
       </div>
 
       <div class="box" style="--c:#fbbf24; left:815px; top:790px; width:280px; height:200px">

@@ -138,6 +138,8 @@ invocarlo. Mantenerlo interno evita tener que endurecer un servicio público.
 
 ## 2026-10-06 — Persistencia en SQLite
 
+> **Reemplazada (2026-10-06)** por "Postgres para pb-coach y n8n", más abajo.
+
 **Decisión**: SQLite en un volumen de Docker para planes versionados,
 sesiones realizadas y registro de ejecuciones del agente (incluido el
 consumo de tokens). Los perfiles de metodología siguen en YAML en git.
@@ -153,7 +155,7 @@ entrenamientos de la próxima semana se publican en el reloj, a través de
 [Taxuspt/garmin_mcp](https://github.com/Taxuspt/garmin_mcp) corriendo como
 contenedor propio (`garmin-mcp`) en el docker-compose, con versión fijada.
 `pb-coach` es su cliente MCP (`mcp_client/garmin.py`) y solo usa una lista
-blanca de tools. El LLM nunca ve ese servidor: la lectura (sync → SQLite) y
+blanca de tools. El LLM nunca ve ese servidor: la lectura (sync → base de datos) y
 la escritura (publicar la semana) son pasos deterministas fuera del bucle
 del agente. Las sesiones de running se publican generando el JSON del
 entrenamiento desde código; si el formato se queda corto, plan B para la
@@ -272,3 +274,22 @@ evaluable. Las métricas de progreso entran como `metricas_externas`.
 **Por qué**: ante señales de fatiga, proteger al atleta va antes que
 progresar. Deducir el tipo de sesión (Tempo, Umbral o Series) solo por la
 zona sería adivinar, así que `SesionRealizada` admite clase sin tipo.
+
+## 2026-10-06 — Postgres para pb-coach y n8n (reemplaza a SQLite)
+
+**Decisión**: un servicio `postgres` (18.6) en el compose, sin puertos
+publicados, con dos bases separadas — `n8n` y `pb_coach` —, cada una con su
+usuario y sin permiso de conexión a la otra (`docker/postgres/init.sql`).
+n8n deja su SQLite interno y usa su base; pb-coach usará la suya vía
+SQLAlchemy + Alembic, guardando las versiones del plan como JSONB. El
+contenedor pb-coach recibe solo sus variables, nunca la contraseña del
+superusuario.
+
+**Por qué**: con Docker Compose ya en marcha, la ventaja de SQLite (no
+levantar un servidor) pesa poco, y Postgres da: una sola base robusta para
+n8n y pb-coach con un único punto de backup (`pg_dump`), JSONB para
+consultar dentro de los planes versionados (qué cambió entre versiones,
+qué acciones de ajuste se aplicaron) y el flujo estándar de un proyecto
+real (ORM + migraciones). Coste: un contenedor más (~50–100 MB) y tests de
+persistencia contra un Postgres levantado; el motor sigue siendo puro y sus
+tests no cambian.

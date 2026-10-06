@@ -41,7 +41,7 @@ n8n ── cron semanal ──▶ POST /semana/ajustar ─┐
                           ├─ agente LLM (propone)
                           ├─ motor determinista (decide)
                           ├─ perfiles YAML (metodología)
-                          └─ SQLite (planes versionados, sesiones)
+                          └─ PostgreSQL (planes versionados, sesiones)
 n8n ◀── resultado ── Telegram
 ```
 
@@ -67,8 +67,9 @@ docs/           Visión, decisiones y diagramas (fuente HTML en docs/*/)
   competición, tres niveles de detalle, sesión planificada vs. realizada,
   reglas de ajuste), loader de perfiles, perfil didáctico, API con `/health`
   y stack Docker (n8n + pb-coach + garmin-mcp), todo con tests.
-- Siguiente: motor determinista (`engine/calculator.py`, `validator.py`,
-  `deviation.py`) y persistencia SQLite.
+- Hecho también: motor determinista completo (`engine/calculator.py`,
+  `validator.py`, `deviation.py`) y Postgres en el stack (n8n ya lo usa).
+- Siguiente: persistencia de pb-coach en Postgres (SQLAlchemy + Alembic).
 
 ## Setup
 

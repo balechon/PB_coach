@@ -106,7 +106,7 @@ n8n ── cron semanal ──▶ POST /semana/ajustar ─┐
                           ├─ agente LLM (propone)
                           ├─ motor determinista (decide)
                           ├─ perfiles YAML (metodología)
-                          ├─ SQLite (planes versionados, sesiones, ejecuciones)
+                          ├─ PostgreSQL (planes versionados, sesiones, ejecuciones)
                           └─ publicar (MCP, sin LLM) ──▶ garmin-mcp ──▶ reloj
 n8n ◀── resultado ── Telegram
 ```

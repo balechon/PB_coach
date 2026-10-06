@@ -1,16 +1,37 @@
-# Stack de PB_coach: n8n (orquestador) + pb-coach (API) + garmin-mcp.
-# Sin superficie pública: solo n8n publica un puerto, y únicamente en
-# 127.0.0.1 del host; al editor se entra con un túnel SSH
-# (ssh -L 5678:localhost:5678 usuario@vps). pb-coach y garmin-mcp solo son
-# accesibles dentro de la red de Docker. Ver docs/decisions.md.
+# Stack de PB_coach: postgres + n8n (orquestador) + pb-coach (API) +
+# garmin-mcp. Sin superficie pública: solo n8n publica un puerto, y
+# únicamente en 127.0.0.1 del host; al editor se entra con un túnel SSH
+# (ssh -L 5678:localhost:5678 usuario@vps). postgres, pb-coach y garmin-mcp
+# solo son accesibles dentro de la red de Docker. Ver docs/decisions.md.
 #
 #   docker compose up -d --build                   # n8n + pb-coach
 #   docker compose --profile garmin up -d --build  # + garmin-mcp
 #   docker compose run --rm --build test           # tests en el contenedor
 #
-# Requiere un .env con N8N_ENCRYPTION_KEY (ver .env.example).
+# Requiere un .env con N8N_ENCRYPTION_KEY y las contraseñas de Postgres
+# (ver .env.example).
 
 services:
+  # Una sola instancia, dos bases separadas (n8n y pb_coach), cada una con su
+  # usuario. Las crea docker/postgres/init.sql la primera vez.
+  postgres:
+    image: postgres:18.6-alpine
+    environment:
+      POSTGRES_USER: postgres
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:?Define POSTGRES_PASSWORD en .env}
+      N8N_DB_PASSWORD: ${N8N_DB_PASSWORD:?Define N8N_DB_PASSWORD en .env}
+      PB_COACH_DB_PASSWORD: ${PB_COACH_DB_PASSWORD:?Define PB_COACH_DB_PASSWORD en .env}
+      TZ: ${TZ:-America/Guayaquil}
+    volumes:
+      - postgres-data:/var/lib/postgresql
+      - ./docker/postgres/init.sql:/docker-entrypoint-initdb.d/init.sql:ro
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U postgres"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+    restart: unless-stopped
+
   n8n:
     image: n8nio/n8n:2.42.3
     environment:
@@ -25,11 +46,19 @@ services:
       N8N_DIAGNOSTICS_ENABLED: "false"
       N8N_PERSONALIZATION_ENABLED: "false"
       N8N_ENFORCE_SETTINGS_FILE_PERMISSIONS: "true"
+      DB_TYPE: postgresdb
+      DB_POSTGRESDB_HOST: postgres
+      DB_POSTGRESDB_PORT: "5432"
+      DB_POSTGRESDB_DATABASE: n8n
+      DB_POSTGRESDB_USER: n8n
+      DB_POSTGRESDB_PASSWORD: ${N8N_DB_PASSWORD}
     volumes:
       - n8n-data:/home/node/.n8n
     ports:
       - "127.0.0.1:5678:5678"
     depends_on:
+      postgres:
+        condition: service_healthy
       pb-coach:
         condition: service_healthy
     restart: unless-stopped
@@ -38,14 +67,17 @@ services:
     build:
       context: .
       target: runtime
-    env_file:
-      - path: .env
-        required: false
+    # Solo las variables que necesita: nunca el .env completo (que incluye
+    # las contraseñas del superusuario de Postgres y de n8n).
     environment:
       TZ: ${TZ:-America/Guayaquil}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY:-}
+      PB_COACH_API_TOKEN: ${PB_COACH_API_TOKEN:-}
+      DATABASE_URL: postgresql+psycopg://pb_coach:${PB_COACH_DB_PASSWORD}@postgres:5432/pb_coach
       GARMIN_MCP_URL: http://garmin-mcp:8000/mcp
-    volumes:
-      - pb-coach-data:/app/data
+    depends_on:
+      postgres:
+        condition: service_healthy
     restart: unless-stopped
 
   test:
@@ -81,6 +113,6 @@ secrets:
     file: ./secrets/garmin_password.txt
 
 volumes:
+  postgres-data:
   n8n-data:
-  pb-coach-data:
   garmin-tokens:
